@@ -7,3 +7,6 @@ LOCAL.md
 # Build output
 _site/
 node_modules/
+
+# Local lineup pipeline (scripts, per-map agent data); not part of the public site
+tools/
