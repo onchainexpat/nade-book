@@ -25,6 +25,8 @@ const head = [
 const page = await readFile(path.join(ROOT, 'public', 'index.html'), 'utf8');
 await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
-await cp(path.join(ROOT, 'public', 'img'), path.join(OUT, 'img'), { recursive: true });
+for (const dir of ['img', 'clips']) {
+  await cp(path.join(ROOT, 'public', dir), path.join(OUT, dir), { recursive: true }).catch((e) => { if (e.code !== 'ENOENT') throw e; });
+}
 await writeFile(path.join(OUT, 'index.html'), `<!doctype html><html lang="en"><head>${head}</head><body>${page}</body></html>`);
 console.log(`Built ${path.relative(ROOT, OUT)}/ (${SITE_URL || 'no SITE_URL set'})`);
