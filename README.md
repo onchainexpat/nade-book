@@ -2,7 +2,7 @@
 
 A CS2 smoke and flash lineup book. Pick a map and a side and you get three smokes and three flashes per page, with arrows to page through the rest.
 
-Every lineup has screenshots for where to stand, where to aim and what it does, and they play through on their own (Slow, Med or Fast) so you can watch the setup without clicking. Tap any screenshot for full size, or pick a shot to hold on it.
+Every lineup has screenshots for where to stand, where to aim and what it does, and they play through on their own (Slow, Med or Fast; Med by default) so you can watch the setup without clicking. Tap any screenshot for full size, or pick a shot to hold on it.
 
 **Live site:** https://onchainexpat.github.io/nade-book/
 

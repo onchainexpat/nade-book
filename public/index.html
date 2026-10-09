@@ -159,7 +159,7 @@ img { max-width: 100%; }
 /* Slideshow: the bar under the active tab fills over --dur; when it ends the card advances. */
 .tabs .bar { position: absolute; left: 0; bottom: -2px; height: 2px; width: 0; background: var(--accent); pointer-events: none; }
 .card[data-playing="true"] .tabs button[aria-selected="true"] { border-bottom-color: var(--line); }
-.card[data-playing="true"] .tabs button[aria-selected="true"] .bar { animation: fill var(--dur, 5s) linear forwards; }
+.card[data-playing="true"] .tabs button[aria-selected="true"] .bar { animation: fill var(--dur, 2.5s) linear forwards; }
 .card:hover .bar, .card:focus-within .bar, .app.lb-open .bar { animation-play-state: paused !important; }
 @keyframes fill { from { width: 0; } to { width: 100%; } }
 .tabs .k { font-family: var(--font-mono); margin-right: 4px; opacity: 0.7; }
@@ -266,8 +266,8 @@ dialog.lightbox::backdrop { background: rgba(8, 7, 5, 0.86); }
       <span class="play-label">Shots</span>
       <button type="button" class="play-btn" id="playBtn" aria-pressed="true">❚❚ Pause</button>
       <div class="speeds" role="group" aria-label="Slideshow speed">
-        <button type="button" id="speed-slow" data-speed="slow" aria-pressed="true">Slow</button>
-        <button type="button" id="speed-med" data-speed="med" aria-pressed="false">Med</button>
+        <button type="button" id="speed-slow" data-speed="slow" aria-pressed="false">Slow</button>
+        <button type="button" id="speed-med" data-speed="med" aria-pressed="true">Med</button>
         <button type="button" id="speed-fast" data-speed="fast" aria-pressed="false">Fast</button>
       </div>
     </div>
@@ -327,6 +327,8 @@ dialog.lightbox::backdrop { background: rgba(8, 7, 5, 0.86); }
     cn1: { channel: 'CS2 NADES', title: 'CS2 Dust 2 - The Only Smokes You Need to Win', url: 'https://youtu.be/NiJ6dj_IgQE', date: 'Sep 9, 2026' },
     cn2: { channel: 'CS2 NADES', title: 'CS2 Dust 2: Smokes & Flashes Guide (Updated & Easy Lineups)', url: 'https://youtu.be/9ypTCLOi2cE', date: 'Dec 2, 2025' },
     nart: { channel: 'NartOutHere', title: 'CS2 Dust 2 Smokes You NEED to Know in 2026', url: 'https://youtu.be/HY85NcZMrAg', date: 'Feb 28, 2026' },
+    // <generated-sources>
+    // </generated-sources>
     kit: { channel: 'CS2 Kitchen', title: 'CS2 - 10 Must-Know Self POP Flashes For Dust2', url: 'https://youtu.be/w0J4eyZ28Kw', date: 'Jan 9, 2025' },
   };
 
@@ -561,17 +563,19 @@ dialog.lightbox::backdrop { background: rgba(8, 7, 5, 0.86); }
       steps: ['Tuck into the corner shown in Stand.', 'Find where the line ends and aim there (Aim).', 'Left-click jump-throw, then peek lower tunnels.'],
       note: 'Smoke top mid first (left-click) so you cannot be traded from there.',
       shots: [['Stand', D('k-lowtun-stand')], ['Aim', D('k-lowtun-aim')], ['Result', D('k-lowtun-result')]] },
+    // <generated-lineups>
+    // </generated-lineups>
   ];
 
   // ---------- view state ----------
   const view = { map: 'mirage', side: 'T', page: { smoke: 0, flash: 0 }, follow: true };
   const shotIdx = new Map();   // lineup id -> selected shot index
   const pinned = new Set();    // lineup ids the viewer stopped on by picking a shot
-  const SPEEDS = { slow: 5, med: 3.5, fast: 2 };   // seconds per shot
+  const SPEEDS = { slow: 3.5, med: 2.5, fast: 1.5 };   // seconds per shot
   const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const play = (() => {
-    try { const p = JSON.parse(localStorage.getItem('nadebook:play') || 'null'); if (p && SPEEDS[p.speed]) return { on: !!p.on, speed: p.speed }; } catch {}
-    return { on: !reduceMotion, speed: 'slow' };
+    try { const p = JSON.parse(localStorage.getItem('nadebook:play2') || 'null'); if (p && SPEEDS[p.speed]) return { on: !!p.on, speed: p.speed }; } catch {}
+    return { on: !reduceMotion, speed: 'med' };
   })();
   let live = { mode: 'off', state: null };
 
@@ -734,7 +738,7 @@ dialog.lightbox::backdrop { background: rgba(8, 7, 5, 0.86); }
     b.textContent = play.on ? '❚❚ Pause' : '▶ Play';
     for (const k of Object.keys(SPEEDS)) $('speed-' + k).setAttribute('aria-pressed', String(play.speed === k));
     document.querySelectorAll('.card').forEach((c) => { c.dataset.playing = String(play.on && !pinned.has(c.dataset.id)); });
-    try { localStorage.setItem('nadebook:play', JSON.stringify(play)); } catch {}
+    try { localStorage.setItem('nadebook:play2', JSON.stringify(play)); } catch {}
   }
   $('playBtn').addEventListener('click', () => { play.on = !play.on; if (play.on) pinned.clear(); renderPlay(); });
   for (const k of Object.keys(SPEEDS)) $('speed-' + k).addEventListener('click', () => { play.speed = k; if (!play.on) { play.on = true; pinned.clear(); } renderPlay(); });
