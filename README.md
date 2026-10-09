@@ -10,17 +10,17 @@ Links can open straight to a page, for example `#dust2/ct` or `#mirage/t`.
 
 ## Maps
 
-208 lineups in total.
+220 lineups in total.
 
 | Map | T smokes | T flashes | CT smokes | CT flashes |
 |---|---|---|---|---|
 | Mirage | 12 | 4 | 5 | 4 |
 | Dust II | 12 | 6 | 5 | 8 |
 | Inferno | 7 | 6 | 6 | 9 |
-| Nuke | 9 | 6 | 4 | 3 |
+| Nuke | 9 | 6 | 6 | 6 |
 | Ancient | 8 | 5 | 4 | 8 |
 | Anubis | 7 | 4 | 4 | 6 |
-| Train | 5 | 4 | 2 | 3 |
+| Train | 5 | 4 | 5 | 7 |
 | Overpass | 8 | 4 | 5 | 4 |
 | Vertigo | 4 | 6 | 4 | 7 |
 
@@ -47,12 +47,22 @@ Lineups, screenshots and clips come from these videos. Each card links back to t
 - CS2 NADES, [CS2 Nuke Smoke Lineups – Control the Map & Secure Rounds!](https://youtu.be/EvZhubo1pyE)
 - CS Tactics, [CS2 Nuke - All ESSENTIAL Smokes for 2025!](https://youtu.be/mORm-3oZVXM)
 - CS Tactics, [CS2 Nuke - EVERY Flash you MUST KNOW!](https://youtu.be/Wa3NtkIJ1Fc)
+- NartOutHere, [Essential CS2 NUKE Nades Guide - MUST KNOW (2026)](https://youtu.be/6_WAimVYF0I)
+- James Selwood, [CS2 Nuke CT Heaven Flash](https://youtu.be/xKNq0g9a8ig)
+- Milosh0vskY, [Nuke SMOKES You Have To Know In CS2!! (2026)](https://youtu.be/db7rgJFkY0Y)
 - Dream League Gaming, [Essential Overpass Utility: Smokes, Molotovs & Flashes for T-Side | CS2 (2025)](https://youtu.be/lrKy9nkJOLU)
 - Dream League Gaming, [Essential Overpass Utility: Smokes, Molotovs & Flashes for CT-Side | CS2 (2025)](https://youtu.be/K2xpLCNXQ0Q)
 - CS Tactics, [CS2 Overpass - The BEST Flashes for SOLO QUEUE!](https://youtu.be/TXV-lTJQtpY)
 - Tigerr, [CS2 TRAIN Smokes You MUST Know! | CS2 Train Smokes Guide](https://youtu.be/XO4Mok3yLj4)
 - Icysandwich, [CS2 Train - Basic lineups and solo utilty, both sites](https://youtu.be/Y6m94T8ukQo)
 - Counter-Stupid, [*NEW* Train Utility Guide - CS2 Tips and Tricks Full video - Smokes, flashes and more!](https://youtu.be/bkIzyrtNocs)
+- CS Tactics, [CS2 Train - All ESSENTIAL Smokes for SEASON 3!](https://youtu.be/4BFb_RGez3s)
+- EZG, [CS2 Train: ESSENTIAL Utility you NEED to Know!](https://youtu.be/zVnRTPiOqb8)
+- Conciding, [Quick&Easy Smokes on Train](https://youtu.be/mHI34PyvAeo)
+- Spyn, [Perfect A Site Flash as CT on Train | CS2 Lineup Guide](https://youtu.be/CbI8GN0ldfI)
+- Spyn, [Ivy Flash as CT on Train | CS2 Lineup Guide](https://youtu.be/aVO61q-F4RM)
+- Spyn, [Retake Flash on Train as CT | CS2 Lineup Guide](https://youtu.be/5lYRmzDCUMM)
+- Spyn, [Crazy Ivy Flash on Train | CT Side CS2 Lineup Guide](https://youtu.be/tAPnScnpWSc)
 - CS Tactics, [CS2 Vertigo - All Essential Nades for 2026!](https://youtu.be/XFnT-jBD52k)
 - teeHoo-, [VERTIGO NADES 2026](https://youtu.be/JF-QOg6lFdA)
 - CS2 Kitchen, [CS2 - 10 Must-Know Self POP Flashes For Dust2](https://youtu.be/w0J4eyZ28Kw)
