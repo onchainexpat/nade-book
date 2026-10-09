@@ -1,0 +1,9 @@
+# Local-only: the CS2 live-match listener and its config never go in this public repo
+server.js
+cfg/
+.gsi-token
+LOCAL.md
+
+# Build output
+_site/
+node_modules/

@@ -1,0 +1,10 @@
+{
+  "name": "nade-book",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CS2 smoke and flash lineup book",
+  "scripts": {
+    "build": "node scripts/build-pages.mjs"
+  }
+}

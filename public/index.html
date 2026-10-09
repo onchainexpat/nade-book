@@ -1,0 +1,833 @@
+<title>Nade Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Saira+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: a tactical board. Match readout strip on top, map rail under it,
+   then two shelves (Smokes, Flashes) that each hold one page of three lineup slots. */
+:root {
+  color-scheme: dark;            /* single dark world by choice: it sits next to the game */
+  --ground: #15120e;             /* shadowed sandstone */
+  --panel: #1f1a14;
+  --panel-2: #2a231b;
+  --line: #3b3226;
+  --text: #efe5d3;
+  --muted: #a8997f;
+  --t: #e6a23c;                  /* Terrorist ochre */
+  --ct: #79aee0;                 /* Counter-Terrorist steel blue */
+  --live: #e5534b;
+  --on-accent: #17130e;
+  --font-display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --s-12: 0.75rem; --s-14: 0.875rem; --s-16: 1rem; --s-20: 1.25rem; --s-28: 1.75rem; --s-48: 3rem;
+  --radius: 6px;
+}
+.app { --accent: var(--t); --accent-soft: rgba(230, 162, 60, 0.14); }
+.app[data-side="CT"] { --accent: var(--ct); --accent-soft: rgba(121, 174, 224, 0.14); }
+
+* { box-sizing: border-box; }
+html, body { background: var(--ground); }
+body {
+  margin: 0; color: var(--text); font-family: var(--font-body); font-size: var(--s-14); line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.app { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 20px 48px; display: grid; gap: 20px; }
+
+/* ---------- match strip ---------- */
+.strip {
+  display: grid; grid-template-columns: 1fr auto; gap: 16px 24px; align-items: end;
+  padding-bottom: 18px; border-bottom: 1px solid var(--line);
+}
+.brand {
+  grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  font-family: var(--font-display); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  font-size: var(--s-14); color: var(--muted);
+}
+.brand b { color: var(--text); font-weight: 700; }
+.readout { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; min-width: 0; }
+.map-title { display: grid; gap: 2px; min-width: 0; }
+.map-title h1 {
+  margin: 0; font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+  font-size: clamp(2.25rem, 6vw, var(--s-48)); line-height: 0.95; letter-spacing: 0.02em; text-wrap: balance;
+}
+.map-title .code { color: var(--muted); font-size: var(--s-12); }
+
+.sides { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--panel); }
+.sides button {
+  border: 0; background: transparent; cursor: pointer; padding: 8px 16px; min-width: 56px;
+  font-family: var(--font-display); font-weight: 700; font-size: var(--s-20); letter-spacing: 0.06em; color: var(--muted);
+}
+.sides button[data-side="T"][aria-pressed="true"] { background: var(--t); color: var(--on-accent); }
+.sides button[data-side="CT"][aria-pressed="true"] { background: var(--ct); color: var(--on-accent); }
+.sides button:not([aria-pressed="true"]):hover { color: var(--text); background: var(--panel-2); }
+
+.matchline { color: var(--muted); font-size: var(--s-12); padding-bottom: 6px; }
+.matchline strong { color: var(--text); font-weight: 500; }
+
+.live { display: grid; justify-items: end; gap: 6px; text-align: right; }
+.live-chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel); font-size: var(--s-12); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.live-chip[data-state="live"] { border-color: rgba(229, 83, 75, 0.5); }
+.live-chip[data-state="live"] .dot { background: var(--live); animation: pulse 1.6s ease-in-out infinite; }
+.live-chip[data-state="waiting"] .dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--muted); }
+@keyframes pulse { 50% { opacity: 0.35; } }
+.live-note { color: var(--muted); font-size: var(--s-12); max-width: 34ch; }
+.live-note a, .live-note button.linkish { color: var(--text); }
+button.linkish { background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; font-size: inherit; }
+
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+
+/* ---------- map rail + slideshow controls ---------- */
+.railrow { display: flex; gap: 12px 20px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.maps { display: flex; gap: 8px; flex-wrap: wrap; }
+.play { display: inline-flex; align-items: center; gap: 8px; }
+.play-label { color: var(--muted); font-size: var(--s-12); text-transform: uppercase; letter-spacing: 0.08em; }
+.play-btn, .speeds button {
+  border: 1px solid var(--line); background: var(--panel); cursor: pointer; font-size: var(--s-12); color: var(--muted); padding: 6px 10px;
+}
+.play-btn { border-radius: var(--radius); color: var(--text); min-width: 76px; }
+.play-btn:hover { border-color: var(--accent); }
+.speeds { display: inline-flex; }
+.speeds button { border-radius: 0; margin-left: -1px; }
+.speeds button:first-child { border-radius: var(--radius) 0 0 var(--radius); margin-left: 0; }
+.speeds button:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+.speeds button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); position: relative; }
+.speeds button:not([aria-pressed="true"]):hover { color: var(--text); }
+.maps button {
+  display: inline-flex; align-items: baseline; gap: 8px; cursor: pointer;
+  padding: 6px 12px; border-radius: var(--radius); border: 1px solid var(--line); background: transparent;
+  font-family: var(--font-display); font-weight: 600; font-size: var(--s-16); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted);
+}
+.maps button .n { font-family: var(--font-mono); font-size: var(--s-12); font-weight: 400; }
+.maps button:hover { color: var(--text); border-color: var(--muted); }
+.maps button[aria-pressed="true"] { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+.maps button[data-empty="true"]:not([aria-pressed="true"]) { opacity: 0.55; }
+
+/* ---------- shelves ---------- */
+.shelf { display: grid; gap: 12px; }
+.shelf-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.shelf-head h2 {
+  margin: 0; font-family: var(--font-display); font-weight: 700; font-size: var(--s-28);
+  text-transform: uppercase; letter-spacing: 0.04em; line-height: 1;
+}
+.kind-mark { width: 12px; height: 12px; border-radius: 2px; background: var(--accent); flex: none; }
+.shelf[data-type="flash"] .kind-mark { background: transparent; box-shadow: inset 0 0 0 2px var(--accent); border-radius: 50%; }
+.shelf-head .count { color: var(--muted); font-size: var(--s-12); text-transform: uppercase; letter-spacing: 0.08em; }
+.pager { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+.pager span { color: var(--muted); font-size: var(--s-12); min-width: 9ch; text-align: center; }
+.pager button {
+  width: 34px; height: 34px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel);
+  cursor: pointer; font-size: var(--s-20); line-height: 1; display: grid; place-items: center;
+}
+.pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pager button:disabled { opacity: 0.35; cursor: default; }
+
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.card {
+  display: flex; flex-direction: column; min-width: 0;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+}
+.shot { position: relative; aspect-ratio: 16 / 9; max-width: 100%; background: #0d0b08; }
+.shot button { all: unset; display: block; width: 100%; height: 100%; cursor: zoom-in; }
+.shot button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.35s ease; }
+.shot img.fading { opacity: 0.15; }
+.shot-label {
+  position: absolute; left: 8px; top: 8px; padding: 2px 7px; border-radius: 3px;
+  background: rgba(13, 11, 8, 0.82); color: var(--text); font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase;
+  pointer-events: none;
+}
+.tabs { display: flex; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+.tabs button {
+  flex: 1 1 0; min-width: 0; border: 0; background: transparent; cursor: pointer; padding: 7px 4px;
+  font-size: 0.6875rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+.tabs button:hover { color: var(--text); }
+.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.tabs button { position: relative; }
+/* Slideshow: the bar under the active tab fills over --dur; when it ends the card advances. */
+.tabs .bar { position: absolute; left: 0; bottom: -2px; height: 2px; width: 0; background: var(--accent); pointer-events: none; }
+.card[data-playing="true"] .tabs button[aria-selected="true"] { border-bottom-color: var(--line); }
+.card[data-playing="true"] .tabs button[aria-selected="true"] .bar { animation: fill var(--dur, 5s) linear forwards; }
+.card:hover .bar, .card:focus-within .bar, .app.lb-open .bar { animation-play-state: paused !important; }
+@keyframes fill { from { width: 0; } to { width: 100%; } }
+.tabs .k { font-family: var(--font-mono); margin-right: 4px; opacity: 0.7; }
+
+.card-body { display: grid; gap: 10px; padding: 14px 14px 12px; flex: 1; align-content: start; }
+.card h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: var(--s-20); letter-spacing: 0.02em; line-height: 1.15; text-wrap: balance; }
+.route { margin: 0; color: var(--muted); font-size: var(--s-12); text-transform: uppercase; letter-spacing: 0.08em; }
+.route .arrow { color: var(--accent); margin: 0 4px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 2px 8px; border-radius: 3px; border: 1px solid var(--line); font-size: var(--s-12); color: var(--text); background: var(--ground);
+}
+.chip.mono { color: var(--accent); }
+.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; counter-reset: step; }
+.steps li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; counter-increment: step; }
+.steps li::before {
+  content: counter(step); font-family: var(--font-mono); font-size: var(--s-12); color: var(--accent);
+  border: 1px solid var(--line); border-radius: 3px; height: 20px; display: grid; place-items: center; margin-top: 1px;
+}
+.note { margin: 0; color: var(--muted); font-size: var(--s-12); border-left: 2px solid var(--line); padding-left: 10px; }
+.card-foot {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 10px 14px; border-top: 1px solid var(--line); font-size: var(--s-12); color: var(--muted);
+}
+.card-foot a { color: var(--text); text-decoration: none; display: inline-flex; gap: 6px; align-items: baseline; }
+.card-foot a:hover { color: var(--accent); }
+.card-foot a .mono { color: var(--accent); }
+
+.slot {
+  display: grid; place-content: center; text-align: center; gap: 6px; min-height: 220px; padding: 20px;
+  border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); font-size: var(--s-12);
+}
+.slot strong { font-family: var(--font-display); font-size: var(--s-16); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); font-weight: 600; }
+
+.banner {
+  display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--muted);
+}
+.banner strong { color: var(--text); }
+
+.source { color: var(--muted); font-size: var(--s-12); border-top: 1px solid var(--line); padding-top: 14px; }
+.source a { color: var(--text); }
+
+/* ---------- lightbox ---------- */
+dialog.lightbox {
+  width: min(1280px, 100vw - 32px); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--line);
+  border-radius: var(--radius); background: #0d0b08; color: var(--text);
+}
+dialog.lightbox::backdrop { background: rgba(8, 7, 5, 0.86); }
+.lb-img { display: block; width: 100%; height: auto; max-height: calc(100vh - 110px); object-fit: contain; }
+.lb-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.lb-bar .lb-title { font-family: var(--font-display); font-weight: 700; font-size: var(--s-16); letter-spacing: 0.04em; text-transform: uppercase; }
+.lb-bar .lb-step { color: var(--muted); font-size: var(--s-12); text-transform: uppercase; letter-spacing: 0.08em; }
+.lb-bar .spacer { flex: 1; }
+.lb-bar button {
+  border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; font-size: var(--s-12);
+}
+.lb-bar button:hover { border-color: var(--accent); }
+
+@media (max-width: 960px) {
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .card { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-rows: auto auto 1fr; }
+  .card .shot { grid-column: 1; grid-row: 1; }
+  .card .tabs { grid-column: 1; grid-row: 2; }
+  .card .card-body { grid-column: 2; grid-row: 1 / 3; }
+  .card .card-foot { grid-column: 1 / -1; grid-row: 3; align-self: end; }
+  .slot { min-height: 120px; }
+}
+@media (max-width: 640px) {
+  .app { padding-inline: 16px; }
+  .strip { grid-template-columns: 1fr; }
+  .live { justify-items: start; text-align: left; }
+  .card { display: flex; }
+  .pager { margin-left: 0; width: 100%; justify-content: space-between; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-chip[data-state="live"] .dot { animation: none; }
+}
+</style>
+
+<div class="app" id="app" data-side="T">
+  <header class="strip">
+    <div class="brand"><span><b>Nade Book</b> · smokes &amp; flashes</span><span class="mono" id="steamName"></span></div>
+    <div class="readout">
+      <div class="map-title">
+        <h1 id="mapName">Mirage</h1>
+        <span class="code mono" id="mapCode">de_mirage</span>
+      </div>
+      <div class="sides" role="group" aria-label="Side">
+        <button type="button" id="sideT" data-side="T" aria-pressed="true">T</button>
+        <button type="button" id="sideCT" data-side="CT" aria-pressed="false">CT</button>
+      </div>
+      <div class="matchline mono" id="matchline" hidden></div>
+    </div>
+    <div class="live" id="liveBox" hidden>
+      <span class="live-chip" id="liveChip" data-state="manual"><span class="dot"></span><span id="liveText">Manual pick</span></span>
+      <span class="live-note" id="liveNote"></span>
+    </div>
+  </header>
+
+  <div class="railrow">
+    <nav class="maps" id="maps" aria-label="Map"></nav>
+    <div class="play" role="group" aria-label="Shot slideshow">
+      <span class="play-label">Shots</span>
+      <button type="button" class="play-btn" id="playBtn" aria-pressed="true">❚❚ Pause</button>
+      <div class="speeds" role="group" aria-label="Slideshow speed">
+        <button type="button" id="speed-slow" data-speed="slow" aria-pressed="true">Slow</button>
+        <button type="button" id="speed-med" data-speed="med" aria-pressed="false">Med</button>
+        <button type="button" id="speed-fast" data-speed="fast" aria-pressed="false">Fast</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="banner" id="mapBanner" hidden></div>
+
+  <section class="shelf" data-type="smoke" id="shelf-smoke" aria-labelledby="h-smoke">
+    <div class="shelf-head">
+      <span class="kind-mark" aria-hidden="true"></span>
+      <h2 id="h-smoke">Smokes</h2>
+      <span class="count" id="count-smoke"></span>
+      <div class="pager">
+        <button type="button" id="prev-smoke" aria-label="Previous smokes">‹</button>
+        <span class="mono" id="range-smoke" aria-live="polite"></span>
+        <button type="button" id="next-smoke" aria-label="Next smokes">›</button>
+      </div>
+    </div>
+    <div class="cards" id="cards-smoke"></div>
+  </section>
+
+  <section class="shelf" data-type="flash" id="shelf-flash" aria-labelledby="h-flash">
+    <div class="shelf-head">
+      <span class="kind-mark" aria-hidden="true"></span>
+      <h2 id="h-flash">Flashes</h2>
+      <span class="count" id="count-flash"></span>
+      <div class="pager">
+        <button type="button" id="prev-flash" aria-label="Previous flashes">‹</button>
+        <span class="mono" id="range-flash" aria-live="polite"></span>
+        <button type="button" id="next-flash" aria-label="Next flashes">›</button>
+      </div>
+    </div>
+    <div class="cards" id="cards-flash"></div>
+  </section>
+
+  <p class="source" id="sourceLine"></p>
+</div>
+
+<dialog class="lightbox" id="lightbox" aria-label="Lineup screenshot">
+  <img class="lb-img" id="lbImg" alt="">
+  <div class="lb-bar">
+    <span class="lb-title" id="lbTitle"></span>
+    <span class="lb-step" id="lbStep"></span>
+    <span class="spacer"></span>
+    <button type="button" id="lbPrev">‹ Prev</button>
+    <button type="button" id="lbNext">Next ›</button>
+    <button type="button" id="lbClose">Close</button>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const PER_PAGE = 3;
+
+  const SOURCES = {
+    nk30: { channel: 'NadeKing', title: "30 Mirage Tricks You Didn't Know", url: 'https://youtu.be/XNCPkPh8kYI', date: 'Oct 7, 2026' },
+    cn1: { channel: 'CS2 NADES', title: 'CS2 Dust 2 - The Only Smokes You Need to Win', url: 'https://youtu.be/NiJ6dj_IgQE', date: 'Sep 9, 2026' },
+    cn2: { channel: 'CS2 NADES', title: 'CS2 Dust 2: Smokes & Flashes Guide (Updated & Easy Lineups)', url: 'https://youtu.be/9ypTCLOi2cE', date: 'Dec 2, 2025' },
+    nart: { channel: 'NartOutHere', title: 'CS2 Dust 2 Smokes You NEED to Know in 2026', url: 'https://youtu.be/HY85NcZMrAg', date: 'Feb 28, 2026' },
+    kit: { channel: 'CS2 Kitchen', title: 'CS2 - 10 Must-Know Self POP Flashes For Dust2', url: 'https://youtu.be/w0J4eyZ28Kw', date: 'Jan 9, 2025' },
+  };
+
+  const MAPS = [
+    ['mirage', 'Mirage'], ['inferno', 'Inferno'], ['dust2', 'Dust II'], ['nuke', 'Nuke'], ['ancient', 'Ancient'],
+    ['anubis', 'Anubis'], ['train', 'Train'], ['overpass', 'Overpass'], ['vertigo', 'Vertigo'],
+  ];
+
+  // Screenshots pulled from the source video. Each lineup lists its shots in the order you use them.
+  const I = (f) => 'img/mirage/' + f + '.jpg';
+  const D = (f) => 'img/dust2/' + f + '.jpg';
+  const LINEUPS = [
+    // ---------- T smokes ----------
+    { id: 'jungle', map: 'mirage', side: 'T', type: 'smoke', src: 'nk30', t: 480,
+      title: 'Jungle smoke', from: 'A exec', to: 'Jungle', chips: ['Left-click', { mono: '−3x' }],
+      steps: ['Put your feet on the T-shaped crack in the floor slabs (Stand).', 'Look up for the white mark on the building (Aim).', 'Set your crosshair on the −3x tick (Detail).', 'Left-click throw.'],
+      note: 'Throw it together with the A exec flash for a full A hit.',
+      shots: [['Stand', I('jungle-stand')], ['Aim', I('jungle-aim')], ['Detail', I('jungle-zoom')], ['Enemy view', I('jungle-result')]] },
+    { id: 'apps', map: 'mirage', side: 'T', type: 'smoke', src: 'nk30', t: 364,
+      title: 'Apps lurk smoke', from: 'B Apartments', to: 'B site', chips: [{ mono: '−3x' }],
+      steps: ['Stand where the wooden post lines up with the wall edge (Stand).', 'Aim at the −3x tick (Aim, Detail).', 'Throw as shown in the clip.'],
+      note: 'Blocks the CT view of the Apps exit and half-covers the secondary Apps jump spot.',
+      shots: [['Stand', I('apps-stand')], ['Aim', I('apps-aim')], ['Detail', I('apps-zoom')], ['Result', I('apps-result')]] },
+
+    // ---------- T flashes ----------
+    { id: 'ramp', map: 'mirage', side: 'T', type: 'flash', src: 'nk30', t: 271,
+      title: 'A Ramp pot flash', from: 'A Ramp', to: 'A site', chips: ['Easy to remember'],
+      steps: ['On A Ramp, find the clay pot on the ledge (Stand).', 'Line your crosshair up exactly as in Aim.', 'Throw, then swing out onto site.'],
+      note: 'It makes noise when it lands, so peek right away.',
+      shots: [['Stand', I('ramp-stand')], ['Aim', I('ramp-aim')], ['Result', I('ramp-result')]] },
+    { id: 'aexec', map: 'mirage', side: 'T', type: 'flash', src: 'nk30', t: 493,
+      title: 'A exec flash', from: 'A exec', to: 'Behind the wood', chips: ['Jump-throw', 'Spam it'],
+      steps: ['Find the brighter brick on the wall (Aim).', 'Aim down and to the right of it.', 'Jump-throw, and keep throwing more.'],
+      note: 'They pop behind a piece of wood, so they blind CTs on site and not your teammates. Catches players hiding in smokes too.',
+      shots: [['Aim', I('aexec-aim')], ['Throw', I('aexec-throw')], ['Result', I('aexec-result')]] },
+    { id: 'ladder', map: 'mirage', side: 'T', type: 'flash', src: 'nk30', t: 229,
+      title: 'Ladder jump-off flash', from: 'A site', to: 'Ticket booth', chips: ['Ladder jump-off', 'Post-plant'],
+      steps: ['Climb the ladder in the wooden shed (Stand).', 'Line up as in Aim.', 'Jump off the ladder and throw. The jump-off gives the flash extra speed.'],
+      note: 'Blinds CT rotators walking out of Ticket booth (Result).',
+      shots: [['Stand', I('ladder-stand')], ['Aim', I('ladder-aim')], ['Result', I('ladder-victim')]] },
+
+    // ---------- CT smokes ----------
+    { id: 'ninja-smoke', map: 'mirage', side: 'CT', type: 'smoke', src: 'nk30', t: 262,
+      title: 'Ninja gap smoke', from: 'Ninja', to: 'A site', chips: ['Through the gap'],
+      steps: ['Stand in Ninja beside the crates (Stand).', 'Aim through the tiny gap between the crate and the wall (Aim).', 'Throw. It slips through and blooms on site.'],
+      note: 'Careful: your shadow in Ninja is visible to anyone coming out of Ramp.',
+      shots: [['Stand', I('ninjaf-stand')], ['Aim', I('ninjas-aim')], ['Result', I('ninjas-result')]] },
+
+    // ---------- CT flashes ----------
+    { id: 'retake', map: 'mirage', side: 'CT', type: 'flash', src: 'nk30', t: 25,
+      title: 'Ticket booth retake flash', from: 'Ticket booth', to: 'A site', chips: ['Left-click', 'Solo queue'],
+      steps: ['Stand in the corner by the pipe rack and trash can (Stand).', 'Aim at the wall line (Aim).', 'Simple left-click throw.'],
+      note: 'Pops over A and catches most of the common T positions at once.',
+      shots: [['Stand', I('retake-stand')], ['Aim', I('retake-aim')], ['Result', I('retake-result')]] },
+    { id: 'truck', map: 'mirage', side: 'CT', type: 'flash', src: 'nk30', t: 4,
+      title: 'Truck flash vs Apps', from: 'B site', to: 'B Apartments', chips: ['Then climb truck'],
+      steps: ['Stand at the spot shown in the corner of Aim.', 'Aim as shown and throw.', 'Climb onto the truck and fight Apps.'],
+      note: 'The small wall edge keeps the flash from fully blinding you while you climb.',
+      shots: [['Aim', I('truck-aim')], ['Result', I('truck-result')]] },
+    { id: 'ninja-flash', map: 'mirage', side: 'CT', type: 'flash', src: 'nk30', t: 255,
+      title: 'Ninja gap flash', from: 'Ninja', to: 'A site', chips: ['Through the gap'],
+      steps: ['Stand in Ninja beside the crates (Stand).', 'Aim through the tiny gap between the crate and the wall (Aim).', 'Throw. It pops on site while you stay hidden.'],
+      note: 'The same gap fits smokes. Watch your shadow: Ramp can see it.',
+      shots: [['Stand', I('ninjaf-stand')], ['Aim', I('ninjaf-aim')], ['Result', I('ninjaf-result')]] },
+    { id: 'bgap', map: 'mirage', side: 'CT', type: 'flash', src: 'nk30', t: 513,
+      title: 'B crate-gap flash', from: 'B site', to: 'Pushing Ts', chips: ['Box boost nearby'],
+      steps: ['Stand on B next to the wooden crates stacked against the wall (Stand).', 'Aim at the gap between the crates (Aim).', 'Throw it through the gap.'],
+      note: 'Few players know this one. The box boost right next to it is another option.',
+      shots: [['Stand', I('bgap-stand')], ['Aim', I('bgap-aim')], ['Enemy view', I('bgap-result')]] },
+
+    // ================= DUST II =================
+    // ---------- T smokes ----------
+    { id: 'd2-midt', map: 'dust2', side: 'T', type: 'smoke', src: 'cn2', t: 215,
+      title: 'Mid doors smoke', from: 'T spawn', to: 'Mid doors', chips: ['Jump-throw'],
+      steps: ['In T spawn, stand against the low wall facing the white building with two X vents (Stand).', 'Put your crosshair on the spot shown on that building (Aim).', 'Jump-throw.'],
+      note: 'Blocks mid doors so you can cross mid without the CT AWP seeing you.',
+      shots: [['Stand', D('midt-stand')], ['Aim', D('midt-aim')], ['Result', D('midt-result')]] },
+    { id: 'd2-cross', map: 'dust2', side: 'T', type: 'smoke', src: 'cn1', t: 26,
+      title: 'A cross smoke', from: 'Long', to: 'A cross', chips: ['Jump-throw'],
+      steps: ['Stand in the arched passage shown in Stand.', 'Aim at the spot on the arch (Aim).', 'Jump-throw.'],
+      note: 'Covers the cross from Long to A site so CT spawn cannot watch it.',
+      shots: [['Stand', D('cross-stand')], ['Aim', D('cross-aim')], ['Result', D('cross-result')]] },
+    { id: 'd2-crossblue', map: 'dust2', side: 'T', type: 'smoke', src: 'cn2', t: 229,
+      title: 'A cross smoke from Blue', from: 'Long A (Blue)', to: 'A cross', chips: ['Middle throw', 'W + jump-throw'],
+      steps: ['On Long A, stand beside the blue dumpster (Stand).', 'Aim at the spot above the palm tree (Aim).', 'Middle throw (left + right click), walk forward and jump-throw.'],
+      note: 'The same cross, thrown once you already own Long.',
+      shots: [['Stand', D('crossblue-stand')], ['Aim', D('crossblue-aim')], ['Result', D('crossblue-result')]] },
+    { id: 'd2-ct', map: 'dust2', side: 'T', type: 'smoke', src: 'cn1', t: 0,
+      title: 'CT smoke', from: 'Long', to: 'CT spawn', chips: ['Jump-throw'],
+      steps: ['Stand by the pink door and metal gate shown in Stand.', 'Aim at the spot on the gate marked 14 (Aim).', 'Jump-throw.'],
+      note: 'Cuts off CT spawn so rotators cannot see a Long A take.',
+      shots: [['Stand', D('ct-stand')], ['Aim', D('ct-aim')], ['Result', D('ct-result')]] },
+    { id: 'd2-ctshort', map: 'dust2', side: 'T', type: 'smoke', src: 'nart', t: 333,
+      title: 'CT smoke from Short', from: 'Short', to: 'CT spawn', chips: ['Left-click'],
+      steps: ['On Short, stand along the back wall.', 'Aim at the spot shown on the building (Aim).', 'Left-click throw.'],
+      note: 'Pros use it to drop into CT spawn or to fake a B hit.',
+      shots: [['Aim', D('ctshort-aim')], ['Result', D('ctshort-result')]] },
+    { id: 'd2-long', map: 'dust2', side: 'T', type: 'smoke', src: 'cn1', t: 13,
+      title: 'Long start smoke', from: 'T spawn', to: 'Long A', chips: ['Jump-throw', 'Round start'],
+      steps: ['In T spawn, stand at the end of the low wall (Stand).', 'Aim at the spot on the white building with two X vents (Aim).', 'Jump-throw at round start.'],
+      note: 'Lands on Long A past the doors, cutting the CT Long angle while your team walks up.',
+      shots: [['Stand', D('long-stand')], ['Aim', D('long-aim')], ['Result', D('long-result')]] },
+    { id: 'd2-box', map: 'dust2', side: 'T', type: 'smoke', src: 'cn1', t: 41,
+      title: 'Long box smoke', from: 'T side', to: 'Long doors', chips: ['Jump-throw'],
+      steps: ['Stand next to the stacked crates by the arch (Stand).', 'Aim at the spot on the white building (Aim).', 'Jump-throw.'],
+      note: 'Smokes the crates at Long doors so you can push through.',
+      shots: [['Stand', D('box-stand')], ['Aim', D('box-aim')], ['Result', D('box-result')]] },
+    { id: 'd2-midb', map: 'dust2', side: 'T', type: 'smoke', src: 'cn1', t: 85,
+      title: 'Mid to B smoke', from: 'Mid', to: 'Mid to B doors', chips: ['Jump-throw'],
+      steps: ['Stand at the corner by the barrel (Stand).', 'Aim at the spot next to the lamp post (Aim).', 'Jump-throw.'],
+      note: 'Fills the Mid to B doorway so CTs cannot watch the crossing.',
+      shots: [['Stand', D('midb-stand')], ['Aim', D('midb-aim')], ['Result', D('midb-result')]] },
+    { id: 'd2-short', map: 'dust2', side: 'T', type: 'smoke', src: 'cn2', t: 87,
+      title: 'Short smoke', from: 'Mid', to: 'Short', chips: ['Left-click'],
+      steps: ['Stand at the corner by the barrel (Stand).', 'Aim at the lamp just left of the palm (Aim).', 'Left-click throw.'],
+      note: 'Smokes the top of the Short stairs so you can walk up Catwalk.',
+      shots: [['Stand', D('short-stand')], ['Aim', D('short-aim')], ['Result', D('short-result')]] },
+    { id: 'd2-bdoors', map: 'dust2', side: 'T', type: 'smoke', src: 'cn1', t: 122,
+      title: 'B doors smoke', from: 'Upper tunnels', to: 'B doors', chips: ['Jump-throw'],
+      steps: ['Stand by the tarp-covered pallets at the tunnel exit (Stand).', 'Aim at the spot on the tarp (Aim).', 'Jump-throw.'],
+      note: 'Cuts B doors so CTs cannot rotate in. The channel also uses it as a B fake.',
+      shots: [['Stand', D('bdoors-stand')], ['Aim', D('bdoors-aim')], ['Result', D('bdoors-result')]] },
+    { id: 'd2-bwindow', map: 'dust2', side: 'T', type: 'smoke', src: 'cn2', t: 185,
+      title: 'B window smoke', from: 'B tunnels', to: 'B window', chips: ['S + jump-throw'],
+      steps: ['Stand between the crates shown in Stand.', 'Aim at the spot on the crate edge (Aim).', 'Hold S to move back, then jump-throw.'],
+      note: 'Blocks B window so a CT there cannot see the site during the execute.',
+      shots: [['Stand', D('bwindow-stand')], ['Aim', D('bwindow-aim')], ['Result', D('bwindow-result')]] },
+    { id: 'd2-asite', map: 'dust2', side: 'T', type: 'smoke', src: 'cn2', t: 26,
+      title: 'A site double smoke', from: 'Long A', to: 'A site', chips: ['Jump-throw ×2'],
+      steps: ['Stand by the garage door and barrel (Stand).', 'Jump-throw the first smoke at Aim 1.', 'Jump-throw the second smoke at Aim 2.'],
+      note: 'Two smokes from one spot that cover the CT side of A.',
+      shots: [['Stand', D('asite-stand')], ['Aim 1', D('asite-aim1')], ['Aim 2', D('asite-aim2')], ['Result', D('asite-result')]] },
+
+    // ---------- T flashes ----------
+    { id: 'd2-midentry', map: 'dust2', side: 'T', type: 'flash', src: 'cn1', t: 110,
+      title: 'Mid entry flash', from: 'Outside mid', to: 'Mid doors', chips: ['Left-click'],
+      steps: ['Stand facing the tarp shown in Stand.', 'Aim at the spot just above the tarp (Aim).', 'Left-click throw, then push through the doors.'],
+      note: 'Pops as you walk through and catches CTs holding mid.',
+      shots: [['Stand', D('midentry-stand')], ['Aim', D('midentry-aim')], ['Result', D('midentry-result')]] },
+
+    { id: 'd2-k-silentmid', map: 'dust2', side: 'T', type: 'flash', src: 'kit', t: 102,
+      title: 'Silent mid flash', from: 'Outside mid', to: 'Mid', chips: ['Right-click jump-throw', 'No sound'],
+      steps: ['Stand by the tarp at the corner (Stand).', 'Find the two dots and aim a little below them (Aim).', 'Right-click jump-throw.'],
+      note: 'No bounce sound, so CTs near mid get no warning.',
+      shots: [['Stand', D('k-silentmid-stand')], ['Aim', D('k-silentmid-aim')], ['Result', D('k-silentmid-result')]] },
+    { id: 'd2-k-longdoors', map: 'dust2', side: 'T', type: 'flash', src: 'kit', t: 329,
+      title: 'Long doors pop flash', from: 'Outside long', to: 'Long A', chips: ['Left + right click'],
+      steps: ['Stand outside Long doors as shown (Stand).', 'Aim up as in Aim.', 'Left + right click throw, then peek through the doors.'],
+      note: 'Blinds anyone holding Long from the other side. Good for winning the first duel in solo queue.',
+      shots: [['Stand', D('k-longdoors-stand')], ['Aim', D('k-longdoors-aim')], ['Result', D('k-longdoors-result')]] },
+    { id: 'd2-k-shortpeek', map: 'dust2', side: 'T', type: 'flash', src: 'kit', t: 136,
+      title: 'Short peek flash', from: 'Lower mid', to: 'Short', chips: ['Left-click jump-throw', 'After mid smoke'],
+      steps: ['Smoke mid first (see Mid doors smoke).', 'Walk up the alley and jump-throw as you reach the shadow, aimed as in Aim.', 'Peek Short behind it.'],
+      note: 'Pops over the close stairs angle and the high angle on Short.',
+      shots: [['Stand', D('k-shortpeek-stand')], ['Aim', D('k-shortpeek-aim')], ['Result', D('k-shortpeek-result')]] },
+    { id: 'd2-k-lowshort', map: 'dust2', side: 'T', type: 'flash', src: 'kit', t: 188,
+      title: 'Short flash from lower tunnels', from: 'Lower tunnels', to: 'Short', chips: ['Hug the left wall'],
+      steps: ['In lower tunnels, hug the left wall (Stand).', 'Aim at the top part of the arch (Aim).', 'Throw. It bounces high enough to blind every CT angle on Short.'],
+      note: 'Use it when CTs play aggressive on Short and can see you first.',
+      shots: [['Stand', D('k-lowshort-stand')], ['Aim', D('k-lowshort-aim')], ['Result', D('k-lowshort-result')]] },
+    { id: 'd2-k-corner', map: 'dust2', side: 'T', type: 'flash', src: 'kit', t: 360,
+      title: 'Long corner pop flash', from: 'Long A corner', to: 'A site', chips: ['Left + right click', 'No sound'],
+      steps: ['Stand by the blue Rue Principale sign (Stand).', 'Aim up as in Aim.', 'Left + right click throw. It pops right above you, then peek.'],
+      note: 'Silent, unlike the usual bounce flash for an A execute, so close CTs cannot turn away.',
+      shots: [['Stand', D('k-aexec-stand')], ['Aim', D('k-aexec-aim')], ['Result', D('k-aexec-result')]] },
+
+    // ---------- CT smokes ----------
+    { id: 'd2-defl', map: 'dust2', side: 'CT', type: 'smoke', src: 'nart', t: 360,
+      title: 'Defensive Long smoke', from: 'Elevator wall', to: 'Middle of Long', chips: ['Left-click'],
+      steps: ['Stand against the elevator wall (Stand).', 'Aim at the satellite dish (Aim).', 'Left-click throw.'],
+      note: 'Throw it when you lose Long control. It covers both sides of the wall and delays the push. With a teammate flash you can punish Ts walking through.',
+      shots: [['Stand', D('defl-stand')], ['Aim', D('defl-aim')], ['Result', D('defl-result')]] },
+    { id: 'd2-elev', map: 'dust2', side: 'CT', type: 'smoke', src: 'nart', t: 350,
+      title: 'Long doors smoke (fast)', from: 'Elevator', to: 'Long doors', chips: ['Jump-throw', 'Blooms fast'],
+      steps: ['Stand next to the elevator (Stand).', 'Aim at the spot shown (Aim).', 'Jump-throw, then follow up with the flash.'],
+      note: 'NartOutHere rates this the better Long doors smoke because it lands and blooms faster.',
+      shots: [['Stand', D('elev-stand')], ['Aim', D('elev-aim')], ['Follow-up flash', D('elev-result')]] },
+    { id: 'd2-longdoor', map: 'dust2', side: 'CT', type: 'smoke', src: 'nart', t: 344,
+      title: 'Long doors smoke', from: 'Long A', to: 'Long doors', chips: ['Jump-throw'],
+      steps: ['Stand next to the box (Stand).', 'Aim at the part of the wall shown (Aim).', 'Jump-throw.'],
+      note: 'The standard version. Slower to bloom than the elevator one.',
+      shots: [['Stand', D('longdoor-stand')], ['Aim', D('longdoor-aim')], ['Result', D('longdoor-result')]] },
+    { id: 'd2-btun', map: 'dust2', side: 'CT', type: 'smoke', src: 'nart', t: 377,
+      title: 'B tunnels smoke from window', from: 'B window', to: 'Upper tunnels', chips: ['Jump-throw'],
+      steps: ['Stand next to the wooden scaffold (Stand).', 'Aim at the piece of wood sticking out (Aim).', 'Jump-throw.'],
+      note: 'Flies through the rooftop gap and lands at the tunnel exit.',
+      shots: [['Stand', D('btun-stand')], ['Aim', D('btun-aim')], ['Roof gap', D('btun-gap')], ['Result', D('btun-result')]] },
+    { id: 'd2-bret', map: 'dust2', side: 'CT', type: 'smoke', src: 'nart', t: 385,
+      title: 'B tunnel retake smoke', from: 'B side', to: 'Upper tunnels', chips: ['Left-click', 'Retake'],
+      steps: ['Stand at the wall with the small window (Stand).', 'Aim at the circle on the crane (Aim).', 'Left-click throw.'],
+      note: 'Seals the tunnel exit for a B retake.',
+      shots: [['Stand', D('bret-stand')], ['Aim', D('bret-aim')], ['Result', D('bret-result')]] },
+
+    // ---------- CT flashes ----------
+    { id: 'd2-longflash', map: 'dust2', side: 'CT', type: 'flash', src: 'cn1', t: 100,
+      title: 'Long flash', from: 'Long A', to: 'Long', chips: ['Middle throw', 'Jump-throw'],
+      steps: ['Stand by the green container shown in Stand.', 'Aim at the spot on the building (Aim).', 'Middle throw (left + right click) with a jump, then peek Long.'],
+      note: 'Pops over Long so you can take the fight with Ts coming out of the doors.',
+      shots: [['Stand', D('longflash-stand')], ['Aim', D('longflash-aim')], ['Result', D('longflash-result')]] },
+    { id: 'd2-tunnelflash', map: 'dust2', side: 'CT', type: 'flash', src: 'cn2', t: 18,
+      title: 'Tunnel flash', from: 'B site', to: 'Upper tunnels', chips: ['Run + left-click'],
+      steps: ['Stand behind the wooden crates on B (Stand).', 'Aim at the spot shown (Aim).', 'Run forward and left-click throw.'],
+      note: 'Pops at the tunnel exit to stop a B rush.',
+      shots: [['Stand', D('tunnelflash-stand')], ['Aim', D('tunnelflash-aim')], ['Result', D('tunnelflash-result')]] },
+    { id: 'd2-midflash', map: 'dust2', side: 'CT', type: 'flash', src: 'cn2', t: 52,
+      title: 'Mid doors flash', from: 'Mid doors', to: 'Mid', chips: ['Right-click', 'Jump-throw'],
+      steps: ['Stand by the mid doors shown in Stand.', 'Aim at the spot on the door (Aim).', 'Right-click jump-throw, then peek mid.'],
+      note: 'Blinds Ts in mid as you swing.',
+      shots: [['Stand', D('midflash-stand')], ['Aim', D('midflash-aim')], ['Result', D('midflash-result')]] },
+    { id: 'd2-k-antib', map: 'dust2', side: 'CT', type: 'flash', src: 'kit', t: 37,
+      title: 'Anti-rush B flash', from: 'B site', to: 'Upper tunnels', chips: ['Left-click jump-throw'],
+      steps: ['When you hear the rush, stand by the car on B (Stand).', 'Aim as in Aim.', 'Left-click jump-throw.'],
+      note: 'Bounces and lands at the tunnel exit. Ts running out get no time to react.',
+      shots: [['Stand', D('k-antib-stand')], ['Aim', D('k-antib-aim')], ['Result', D('k-antib-result')]] },
+    { id: 'd2-k-shortdef', map: 'dust2', side: 'CT', type: 'flash', src: 'kit', t: 233,
+      title: 'Short defense flash', from: 'A site', to: 'Short', chips: ['Left-click'],
+      steps: ['Stand at the crate with the red star (Stand).', 'Find the line and aim a little left of the star\'s right point (Aim).', 'Left-click throw and peek with it.'],
+      note: 'Pops behind the ledge on Short. Ts coming up either turn away or get fully blind.',
+      shots: [['Stand', D('k-shortdef-stand')], ['Aim', D('k-shortdef-aim')], ['Result', D('k-shortdef-result')]] },
+    { id: 'd2-k-tree', map: 'dust2', side: 'CT', type: 'flash', src: 'kit', t: 275,
+      title: 'Hidden tree flash', from: 'Goose', to: 'Ts pushing A', chips: ['Left + right click', 'Hidden'],
+      steps: ['Stand by the Goose wall (Stand).', 'Aim a little higher than the palm branch, not at it (Aim).', 'Left + right click throw.'],
+      note: 'The flash stays hidden in the palm leaves, so the Ts never see it coming.',
+      shots: [['Stand', D('k-tree-stand')], ['Aim', D('k-tree-aim')], ['Result', D('k-tree-result')]] },
+    { id: 'd2-k-boxpeek', map: 'dust2', side: 'CT', type: 'flash', src: 'kit', t: 65,
+      title: 'B box peek flash', from: 'B box', to: 'Posted AWPer', chips: ['Walk + left-click'],
+      steps: ['Stand behind the box on B (Stand).', 'Find the tire and aim as in Aim.', 'Walk one or two steps and left-click throw.'],
+      note: 'Bounces off the edge of the car. It looks like it came from B doors, not from your box.',
+      shots: [['Stand', D('k-boxpeek-stand')], ['Aim', D('k-boxpeek-aim')], ['Result', D('k-boxpeek-result')]] },
+    { id: 'd2-k-lowtun', map: 'dust2', side: 'CT', type: 'flash', src: 'kit', t: 5,
+      title: 'Lower tunnels pop flash', from: 'Mid', to: 'Lower tunnels', chips: ['Left-click jump-throw', 'Pair with smoke'],
+      steps: ['Tuck into the corner shown in Stand.', 'Find where the line ends and aim there (Aim).', 'Left-click jump-throw, then peek lower tunnels.'],
+      note: 'Smoke top mid first (left-click) so you cannot be traded from there.',
+      shots: [['Stand', D('k-lowtun-stand')], ['Aim', D('k-lowtun-aim')], ['Result', D('k-lowtun-result')]] },
+  ];
+
+  // ---------- view state ----------
+  const view = { map: 'mirage', side: 'T', page: { smoke: 0, flash: 0 }, follow: true };
+  const shotIdx = new Map();   // lineup id -> selected shot index
+  const pinned = new Set();    // lineup ids the viewer stopped on by picking a shot
+  const SPEEDS = { slow: 5, med: 3.5, fast: 2 };   // seconds per shot
+  const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const play = (() => {
+    try { const p = JSON.parse(localStorage.getItem('nadebook:play') || 'null'); if (p && SPEEDS[p.speed]) return { on: !!p.on, speed: p.speed }; } catch {}
+    return { on: !reduceMotion, speed: 'slow' };
+  })();
+  let live = { mode: 'off', state: null };
+
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get() { try { return JSON.parse(localStorage.getItem('nadebook:view') || 'null'); } catch { return null; } },
+    set(v) { try { localStorage.setItem('nadebook:view', JSON.stringify(v)); } catch {} },
+  };
+
+  function fmtTime(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function mapLabel(slug) { const m = MAPS.find(([k]) => k === slug); return m ? m[1] : slug.charAt(0).toUpperCase() + slug.slice(1); }
+  function lineupsFor(map, side, type) { return LINEUPS.filter((l) => l.map === map && l.side === side && l.type === type); }
+  function el(tag, attrs = {}, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v;
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v);
+    }
+    for (const k of kids) if (k != null) n.append(k);
+    return n;
+  }
+
+  // ---------- rendering ----------
+  function renderHeader() {
+    $('app').dataset.side = view.side;
+    $('mapName').textContent = mapLabel(view.map);
+    $('mapCode').textContent = 'de_' + view.map;
+    $('sideT').setAttribute('aria-pressed', String(view.side === 'T'));
+    $('sideCT').setAttribute('aria-pressed', String(view.side === 'CT'));
+
+    const maps = $('maps');
+    const known = MAPS.map(([k]) => k);
+    if (!known.includes(view.map)) MAPS.push([view.map, mapLabel(view.map)]);
+    maps.replaceChildren(...MAPS.map(([slug, label]) => {
+      const n = LINEUPS.filter((l) => l.map === slug).length;
+      return el('button', { type: 'button', 'aria-pressed': String(slug === view.map), 'data-empty': String(n === 0), onclick: () => pick({ map: slug }) },
+        label, el('span', { class: 'n', text: n ? String(n) : '0' }));
+    }));
+
+    const total = LINEUPS.filter((l) => l.map === view.map).length;
+    const banner = $('mapBanner');
+    if (total === 0) {
+      banner.hidden = false;
+      banner.replaceChildren(el('strong', { text: `No ${mapLabel(view.map)} lineups yet.` }),
+        el('span', { text: 'Send a lineup video for this map and its smokes and flashes get added here.' }));
+    } else banner.hidden = true;
+  }
+
+  // Live map/side detection exists only on the copy served by the local companion (it adds this meta tag).
+  // Everywhere else (artifact, GitHub Pages) the page is a plain book and never makes a network request for it.
+  const LIVE_ENABLED = !!document.querySelector('meta[name="nadebook-live"]');
+
+  function renderLive() {
+    $('liveBox').hidden = !LIVE_ENABLED;
+    if (!LIVE_ENABLED) return;
+    const chip = $('liveChip'), text = $('liveText'), note = $('liveNote'), line = $('matchline');
+    const s = live.state;
+    note.replaceChildren(); line.hidden = true; $('steamName').textContent = '';
+    if (live.mode === 'on' && s && s.connected && s.map) {
+      chip.dataset.state = 'live';
+      text.textContent = view.follow ? 'Live · following' : 'Live · paused';
+      if (s.player) $('steamName').textContent = s.player;
+      const bits = [];
+      if (s.round) bits.push(el('span', {}, 'Round ', el('strong', { text: String(s.round) })));
+      if (s.score) bits.push(el('span', { text: `  ·  CT ${s.score.ct} : ${s.score.t} T` }));
+      if (s.phase && s.phase !== 'live') bits.push(el('span', { text: `  ·  ${s.phase}` }));
+      line.replaceChildren(...bits); line.hidden = bits.length === 0;
+      if (!view.follow) note.append('You picked manually. ', el('button', { class: 'linkish', type: 'button', text: 'Follow the game again', onclick: () => { view.follow = true; syncFromLive(); } }));
+      else note.textContent = `Detected ${s.mapName}${s.side ? ' as ' + s.side : ''}.`;
+    } else if (live.mode === 'on') {
+      chip.dataset.state = 'waiting';
+      text.textContent = 'Waiting for CS2';
+      note.textContent = s && s.lastSeen ? 'CS2 is in the menu or closed. Join a match to auto-switch map and side.' : 'No data from CS2 yet. Check the GSI cfg is installed on the gaming PC.';
+    } else {
+      chip.dataset.state = 'manual';
+      text.textContent = 'Manual pick';
+      note.textContent = 'Pick your map and side. Links like #dust2/ct open straight to a page.';
+    }
+  }
+
+  function renderShelf(type) {
+    const all = lineupsFor(view.map, view.side, type);
+    const pages = Math.max(1, Math.ceil(all.length / PER_PAGE));
+    view.page[type] = Math.min(view.page[type], pages - 1);
+    const start = view.page[type] * PER_PAGE;
+    const items = all.slice(start, start + PER_PAGE);
+    const noun = type === 'smoke' ? 'smoke' : 'flash';
+    const plural = type === 'smoke' ? 'smokes' : 'flashes';
+
+    $('count-' + type).textContent = `${all.length} ${all.length === 1 ? noun : plural} for ${view.side}`;
+    $('range-' + type).textContent = all.length ? `${start + 1}–${start + items.length} of ${all.length}` : '0 of 0';
+    $('prev-' + type).disabled = view.page[type] === 0;
+    $('next-' + type).disabled = view.page[type] >= pages - 1;
+
+    const cards = items.map(card);
+    const mapHas = LINEUPS.some((l) => l.map === view.map);
+    while (cards.length < PER_PAGE && (all.length > 0 || mapHas)) {
+      const first = cards.length === 0;
+      cards.push(el('div', { class: 'slot' },
+        el('strong', { text: first ? `No ${view.side} ${plural} yet` : 'Open slot' }),
+        el('span', { text: first ? `The current source has none for ${mapLabel(view.map)} on ${view.side}. Add another video to fill this page.` : `Room for another ${view.side} ${noun} from the next video.` })));
+      if (all.length === 0) break;
+    }
+    $('cards-' + type).replaceChildren(...cards);
+  }
+
+  function card(l) {
+    const idx = shotIdx.get(l.id) ?? 0;
+    const [label, src] = l.shots[idx];
+    const img = el('img', { src, alt: `${l.title}: ${label}`, loading: 'lazy', decoding: 'async', width: '1280', height: '720' });
+    const shot = el('div', { class: 'shot' },
+      el('button', { type: 'button', 'aria-label': `Open ${l.title} ${label} full size`, onclick: () => openLightbox(l, shotIdx.get(l.id) ?? 0) }, img),
+      el('span', { class: 'shot-label', text: label }));
+    const tabs = el('div', { class: 'tabs', role: 'tablist', 'aria-label': `${l.title} shots` },
+      ...l.shots.map(([lab], i) => el('button', {
+        type: 'button', role: 'tab', 'aria-selected': String(i === idx),
+        // Picking a shot by hand holds this card there until you press Play again.
+        onclick: (e) => { const art = e.currentTarget.closest('.card'); pinned.add(l.id); art.dataset.playing = 'false'; setShot(art, l, i); },
+      }, el('span', { class: 'k', text: String(i + 1) }), lab, el('span', { class: 'bar', 'aria-hidden': 'true' }))));
+    const chips = el('div', { class: 'chips' }, ...l.chips.map((c) => typeof c === 'string' ? el('span', { class: 'chip', text: c }) : el('span', { class: 'chip mono', text: c.mono })));
+    const src0 = SOURCES[l.src];
+    for (const [, s] of l.shots) { const pre = new Image(); pre.src = s; }   // warm the cache so the slideshow swaps instantly
+    return el('article', { class: 'card', 'data-id': l.id, 'data-playing': String(play.on && !pinned.has(l.id)),
+        onanimationend: (e) => { if (e.animationName === 'fill') setShot(e.currentTarget, l, ((shotIdx.get(l.id) ?? 0) + 1) % l.shots.length); } },
+      shot, tabs,
+      el('div', { class: 'card-body' },
+        el('h3', { text: l.title }),
+        el('p', { class: 'route' }, l.from, el('span', { class: 'arrow', 'aria-hidden': 'true', text: '→' }), l.to),
+        chips,
+        el('ol', { class: 'steps' }, ...l.steps.map((s) => el('li', { text: s }))),
+        l.note ? el('p', { class: 'note', text: l.note }) : null),
+      el('footer', { class: 'card-foot' },
+        el('a', { href: `${src0.url}?t=${l.t}`, target: '_blank', rel: 'noopener' }, 'Watch clip ', el('span', { class: 'mono', text: fmtTime(l.t) }), ' ↗'),
+        el('span', { text: src0.channel })));
+  }
+
+  // Swap a card's visible shot in place: crossfade the image, move the tab highlight.
+  function setShot(art, l, i) {
+    shotIdx.set(l.id, i);
+    const [label, src] = l.shots[i];
+    art.querySelector('.shot-label').textContent = label;
+    art.querySelector('.shot button').setAttribute('aria-label', `Open ${l.title} ${label} full size`);
+    art.querySelectorAll('.tabs button').forEach((b, j) => b.setAttribute('aria-selected', String(j === i)));
+    const img = art.querySelector('.shot img');
+    const apply = () => { img.src = src; img.alt = `${l.title}: ${label}`; img.classList.remove('fading'); };
+    if (reduceMotion) { apply(); return; }
+    const tok = (art._tok = (art._tok || 0) + 1);
+    img.classList.add('fading');
+    const pre = new Image(); pre.src = src;
+    const decoded = (pre.decode ? pre.decode() : Promise.resolve()).catch(() => {});
+    // Never leave a card dimmed if decoding stalls: swap after 600ms at the latest.
+    Promise.race([decoded, new Promise((r) => setTimeout(r, 600))]).then(() => setTimeout(() => { if (art._tok === tok) apply(); }, 180));
+  }
+
+  // ---------- slideshow controls ----------
+  function renderPlay() {
+    $('app').style.setProperty('--dur', SPEEDS[play.speed] + 's');
+    const b = $('playBtn');
+    b.setAttribute('aria-pressed', String(play.on));
+    b.textContent = play.on ? '❚❚ Pause' : '▶ Play';
+    for (const k of Object.keys(SPEEDS)) $('speed-' + k).setAttribute('aria-pressed', String(play.speed === k));
+    document.querySelectorAll('.card').forEach((c) => { c.dataset.playing = String(play.on && !pinned.has(c.dataset.id)); });
+    try { localStorage.setItem('nadebook:play', JSON.stringify(play)); } catch {}
+  }
+  $('playBtn').addEventListener('click', () => { play.on = !play.on; if (play.on) pinned.clear(); renderPlay(); });
+  for (const k of Object.keys(SPEEDS)) $('speed-' + k).addEventListener('click', () => { play.speed = k; if (!play.on) { play.on = true; pinned.clear(); } renderPlay(); });
+
+  function renderSource() {
+    const keys = [...new Set(LINEUPS.filter((l) => l.map === view.map).map((l) => l.src))];
+    if (!keys.length) { $('sourceLine').textContent = 'Tap a screenshot for full size.'; return; }
+    const parts = ['Lineups and screenshots from '];
+    keys.forEach((k, i) => {
+      const s = SOURCES[k];
+      if (i) parts.push(i === keys.length - 1 ? ' and ' : ', ');
+      parts.push(el('a', { href: s.url, target: '_blank', rel: 'noopener', text: `${s.channel}, “${s.title}”` }), ` (${s.date})`);
+    });
+    parts.push('. Tap a screenshot for full size.');
+    $('sourceLine').replaceChildren(...parts);
+  }
+
+  function render() {
+    renderHeader(); renderLive(); renderShelf('smoke'); renderShelf('flash'); renderSource();
+    try { history.replaceState(null, '', `#${view.map}/${view.side.toLowerCase()}`); } catch {}
+    store.set({ map: view.map, side: view.side });
+  }
+
+  // ---------- interactions ----------
+  function pick(next, fromUser = true) {
+    const changed = (next.map && next.map !== view.map) || (next.side && next.side !== view.side);
+    if (next.map) view.map = next.map;
+    if (next.side) view.side = next.side;
+    if (changed) { view.page = { smoke: 0, flash: 0 }; pinned.clear(); }
+    if (fromUser && live.mode === 'on' && live.state && live.state.connected) view.follow = false;
+    // A live update that keeps the same map and side only refreshes the header, so the slideshow keeps running.
+    if (!changed && !fromUser) { renderHeader(); renderLive(); return; }
+    render();
+  }
+  $('sideT').addEventListener('click', () => pick({ side: 'T' }));
+  $('sideCT').addEventListener('click', () => pick({ side: 'CT' }));
+  for (const type of ['smoke', 'flash']) {
+    $('prev-' + type).addEventListener('click', () => { view.page[type]--; renderShelf(type); });
+    $('next-' + type).addEventListener('click', () => { view.page[type]++; renderShelf(type); });
+  }
+
+  // ---------- lightbox ----------
+  const lb = { l: null, i: 0 };
+  function openLightbox(l, i) { lb.l = l; lb.i = i; drawLightbox(); const d = $('lightbox'); if (!d.open) { d.showModal(); $('app').classList.add('lb-open'); } }
+  $('lightbox').addEventListener('close', () => $('app').classList.remove('lb-open'));
+  function drawLightbox() {
+    const [label, src] = lb.l.shots[lb.i];
+    $('lbImg').src = src; $('lbImg').alt = `${lb.l.title}: ${label}`;
+    $('lbTitle').textContent = lb.l.title;
+    $('lbStep').textContent = `${lb.i + 1} / ${lb.l.shots.length} · ${label}`;
+  }
+  function stepLightbox(d) {
+    lb.i = (lb.i + d + lb.l.shots.length) % lb.l.shots.length;
+    drawLightbox();
+    const art = document.querySelector(`.card[data-id="${lb.l.id}"]`);
+    if (art) setShot(art, lb.l, lb.i); else shotIdx.set(lb.l.id, lb.i);
+  }
+  $('lbPrev').addEventListener('click', () => stepLightbox(-1));
+  $('lbNext').addEventListener('click', () => stepLightbox(1));
+  $('lbClose').addEventListener('click', () => $('lightbox').close());
+  $('lightbox').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+  $('lightbox').addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') stepLightbox(-1); if (e.key === 'ArrowRight') stepLightbox(1); });
+
+  // ---------- live sync (only works when served by the local companion) ----------
+  function syncFromLive() {
+    const s = live.state;
+    if (view.follow && s && s.connected && s.map) pick({ map: s.map, side: s.side || view.side }, false);
+    else render();
+  }
+  async function connectLive() {
+    if (!LIVE_ENABLED) return;
+    try {
+      const r = await fetch('api/state', { cache: 'no-store' });
+      if (!r.ok || !(r.headers.get('content-type') || '').includes('json')) throw new Error('no companion');
+      const s = await r.json();
+      if (!s || s.nadeguide !== 1) throw new Error('no companion');
+      live = { mode: 'on', state: s };
+      syncFromLive();
+      const es = new EventSource('api/events');
+      es.onmessage = (e) => { try { live.state = JSON.parse(e.data); syncFromLive(); } catch {} };
+    } catch {
+      live = { mode: 'off', state: null };
+      renderLive();
+    }
+  }
+
+  // ---------- boot ----------
+  const fromHash = (location.hash || '').replace('#', '').split('/');
+  const saved = store.get();
+  if (fromHash[0]) { view.map = fromHash[0]; if (fromHash[1]) view.side = fromHash[1].toUpperCase() === 'CT' ? 'CT' : 'T'; }
+  else if (saved) { view.map = saved.map || view.map; view.side = saved.side === 'CT' ? 'CT' : 'T'; }
+  render();
+  renderPlay();
+  connectLive();
+})();
+</script>
