@@ -1,6 +1,6 @@
 # Nade Book
 
-A CS2 smoke and flash lineup book for all nine maps. Pick a map and a side and you get three smokes and three flashes per page, with arrows to page through the rest.
+A CS2 smoke and flash lineup book for all ten maps. Pick a map and a side and you get three smokes and three flashes per page, with arrows to page through the rest.
 
 Every lineup has a short clip that plays from where you stand, through the throw, to where it lands. The Stand, Aim and Result tabs follow the clip as it plays; click one to jump there and hold. Slow, Med and Fast set the playback speed. Tap a clip to watch it full size.
 
@@ -10,7 +10,7 @@ Links can open straight to a page, for example `#dust2/ct` or `#mirage/t`.
 
 ## Maps
 
-220 lineups in total.
+241 lineups in total.
 
 | Map | T smokes | T flashes | CT smokes | CT flashes |
 |---|---|---|---|---|
@@ -23,6 +23,7 @@ Links can open straight to a page, for example `#dust2/ct` or `#mirage/t`.
 | Train | 5 | 4 | 5 | 7 |
 | Overpass | 8 | 4 | 5 | 4 |
 | Vertigo | 4 | 6 | 4 | 7 |
+| Cache | 6 | 6 | 5 | 4 |
 
 ## Credits
 
@@ -38,7 +39,11 @@ Lineups, screenshots and clips come from these videos. Each card links back to t
 - CS2 NADES, [CS2 Anubis - New Meta Utility By Vitality In 2026](https://youtu.be/7zVJ8Z93HXc)
 - CS as fast as possible - FNScence, [ANUBIS as fast as possible - NEW Season 4 (meta nades, strats, utility) | CS2 afap](https://youtu.be/4IethUNA4J0)
 - Tigerr, [MUST KNOW Anubis Utility for Free Elo | Anubis Utility Guide](https://youtu.be/g1jYVHvj2w8)
-- NealGuides FPS Tutorials & in-depth Guides, [CS2 Inferno Smokes You NEED TO KNOW & *UPDATED IN 2026*](https://youtu.be/QaTvVtDHypw)
+- CS Tactics, [CS2 Cache - Every Smoke in 5 MINUTES!](https://youtu.be/q0GytCUphXM)
+- Milosh0vskY, [The \*BEST\* Cache FLASHES In 2026!!! (CT & T)](https://youtu.be/DxvQHZ_dRI0)
+- Dream League Gaming, [Essential Cache Utility: Smokes, Molotovs & Flashes for T-Side | CS2 (2026)](https://youtu.be/1LiKvVfyJSI)
+- Dream League Gaming, [Essential Cache Utility: Smokes, Molotovs & Flashes for CT-Side | CS2 (2026)](https://youtu.be/FbvrIRUOzM8)
+- NealGuides FPS Tutorials & in-depth Guides, [CS2 Inferno Smokes You NEED TO KNOW & \*UPDATED IN 2026\*](https://youtu.be/QaTvVtDHypw)
 - Milosh0vskY, [The BEST Inferno Flashes 2026!](https://youtu.be/nXp08zdy3zc)
 - NartOutHere, [CS2 Inferno Smokes You NEED to Know in 2026](https://youtu.be/eljDZdMTPzs)
 - CS2 NADES, [CS2 Inferno - Pro-Level Smokes To Dominate In 2026](https://youtu.be/ZgxBySyBpUU)
@@ -55,7 +60,7 @@ Lineups, screenshots and clips come from these videos. Each card links back to t
 - CS Tactics, [CS2 Overpass - The BEST Flashes for SOLO QUEUE!](https://youtu.be/TXV-lTJQtpY)
 - Tigerr, [CS2 TRAIN Smokes You MUST Know! | CS2 Train Smokes Guide](https://youtu.be/XO4Mok3yLj4)
 - Icysandwich, [CS2 Train - Basic lineups and solo utilty, both sites](https://youtu.be/Y6m94T8ukQo)
-- Counter-Stupid, [*NEW* Train Utility Guide - CS2 Tips and Tricks Full video - Smokes, flashes and more!](https://youtu.be/bkIzyrtNocs)
+- Counter-Stupid, [\*NEW\* Train Utility Guide - CS2 Tips and Tricks Full video - Smokes, flashes and more!](https://youtu.be/bkIzyrtNocs)
 - CS Tactics, [CS2 Train - All ESSENTIAL Smokes for SEASON 3!](https://youtu.be/4BFb_RGez3s)
 - EZG, [CS2 Train: ESSENTIAL Utility you NEED to Know!](https://youtu.be/zVnRTPiOqb8)
 - Conciding, [Quick&Easy Smokes on Train](https://youtu.be/mHI34PyvAeo)
