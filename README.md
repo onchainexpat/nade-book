@@ -10,7 +10,7 @@ Links can open straight to a page, for example `#dust2/ct` or `#mirage/t`.
 
 ## Maps
 
-241 lineups in total.
+240 lineups in total.
 
 | Map | T smokes | T flashes | CT smokes | CT flashes |
 |---|---|---|---|---|
@@ -23,7 +23,7 @@ Links can open straight to a page, for example `#dust2/ct` or `#mirage/t`.
 | Train | 5 | 4 | 5 | 7 |
 | Overpass | 8 | 4 | 5 | 4 |
 | Vertigo | 4 | 6 | 4 | 7 |
-| Cache | 6 | 6 | 5 | 4 |
+| Cache | 6 | 6 | 5 | 3 |
 
 ## Credits
 
